@@ -835,7 +835,7 @@ function demoData() {
   const confuse = { 콜라: '사이다', 사이다: '콜라', 초코: '커피', 커피: '초코', 흰우유: '초코', 녹차: '과일', 홍차: '과일', 에너지드링크: '사이다', 과일: '홍차', 곡류: '초코' };
   const hard = { product: 0.12, snap: 0.3 };
   const records = [];
-  labels.forEach((t) => Object.keys(CONFIG.conditions).forEach((cond) => {
+  labels.forEach((t) => ['product', 'snap'].forEach((cond) => {
     for (let i = 1; i <= (cond === 'product' ? 7 : 8); i++) {
       const probs = {}; labels.forEach((c) => (probs[c] = rnd() * 0.04));
       const roll = rnd();
