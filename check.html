@@ -375,9 +375,18 @@ const CONFIG = {
   // 파일 이름이 이 말로 시작하면 'AI가 틀리는 사례'로 따로 보여 주고 통계에서는 뺀다 (예: 사례_카페인제로콜라.jpg)
   specialPrefix: '사례',
   // 폴더·파일 이름에 영어를 쓴 경우 → 클래스 이름으로 바꿔 읽는다 (대소문자 무시, '1. ' 같은 번호는 자동으로 뗀다)
+  // 띄어쓰기·하이픈·밑줄은 무시하고 비교한다 (예: 'SOFT DRINK', 'soft-drink' → SOFTDRINK)
   aliases: {
-    CHOCO: '초코', COFFEE: '커피', BLACKTEA: '홍차', GREENTEA: '녹차', COLA: '콜라',
-    ENERGY: '에너지드링크', CIDER: '사이다', MILK: '흰우유', FRUIT: '과일', GRAIN: '곡류',
+    CHOCO: '초코', CHOCOLATE: '초코',
+    COFFEE: '커피',
+    BLACKTEA: '홍차', BLACK: '홍차', TEA: '홍차', ICETEA: '홍차',
+    GREENTEA: '녹차', GREEN: '녹차', MATCHA: '녹차',
+    COLA: '콜라', COKE: '콜라',
+    ENERGY: '에너지드링크', ENERGYDRINK: '에너지드링크',
+    CIDER: '사이다', SOFTDRINK: '사이다', SOFT: '사이다', SODA: '사이다',
+    MILK: '흰우유', WHITEMILK: '흰우유',
+    FRUIT: '과일', FRIUT: '과일', FRUITS: '과일',
+    GRAIN: '곡류', GRAINS: '곡류',
   },
   modelURL: './model.json',
   metadataURL: './metadata.json',
@@ -736,7 +745,8 @@ function toClass(word) {
   if (CLASS_NAMES().includes(w)) return w;
   const head = w.split(/[_\-\s(]+/)[0];
   if (CLASS_NAMES().includes(head)) return head;
-  return CONFIG.aliases[w.toUpperCase()] || CONFIG.aliases[head.toUpperCase()] || null;
+  const key = (x) => x.toUpperCase().replace(/[\s_\-]+/g, '');   // 'soft-drink' → 'SOFTDRINK'
+  return CONFIG.aliases[key(w)] || CONFIG.aliases[key(w.replace(/\(.*$/, ''))] || CONFIG.aliases[key(head)] || null;
 }
 function parseName(file) {
   // 맥에서 만든 한글 파일 이름은 자모가 분리된 형태(NFD)라서 'NFC'로 합쳐야 클래스 이름과 같아진다
