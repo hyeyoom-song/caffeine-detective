@@ -234,8 +234,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
     </div>
     <div id="settings" hidden>
       <div class="set">
-        <label for="thIn">‘잘 모르겠어요’ 기준: 가장 높은 확률이 <b class="num" id="thVal">0.70</b>보다 낮으면</label>
-        <div class="inline"><input id="thIn" type="range" min="0.5" max="0.95" step="0.05" value="0.7"></div>
+        <label for="thIn">‘카페인이 없어요’ 기준: 카페인 없는 음료 확률의 합이 <b class="num" id="thVal">0.90</b> 이상일 때만</label>
+        <div class="inline"><input id="thIn" type="range" min="0.5" max="0.95" step="0.05" value="0.9"></div>
       </div>
       <div class="switch"><span>AI 생각 보기 버튼 보이기</span><input id="optThink" type="checkbox" checked></div>
       <div class="switch"><span>결과가 나오면 자동으로 소리 읽기</span><input id="optAuto" type="checkbox"></div>
@@ -256,9 +256,10 @@ const CONFIG = {
   noCaffeine: ['사이다', '흰우유', '과일'],
   modelURL: './model.json',
   metadataURL: './metadata.json',
+  cafMin: 0.5,   // [내 말로: 이 값이 하는 일]
 };
 // 화면에 보이는 설정값 (메모리에만 둔다 → 새로고침하면 처음으로)
-const opts = { th: 0.7, showThink: true, autoSay: false, facing: 'environment' };
+const opts = { th: 0.9, showThink: true, autoSay: false, facing: 'environment' };
 
 const $ = (id) => document.getElementById(id);
 
@@ -327,9 +328,12 @@ async function predictFrom(canvas) {
 }
 function decide(list) {
   const top = list[0];
-  // 가장 높은 확률이 기준보다 낮으면 답을 미룬다 (기준값은 완화책일 뿐 해결책이 아님)
-  if (top.p < opts.th) return { kind: 'unk', top };
-  return { kind: isCaf(top.name) ? 'caf' : 'nocaf', top };
+  // [내 말로: 이 부분이 하는 일]
+  const pCaf = list.filter((x) => CONFIG.caffeine.includes(x.name)).reduce((s, x) => s + x.p, 0);
+  const pNo = list.filter((x) => CONFIG.noCaffeine.includes(x.name)).reduce((s, x) => s + x.p, 0);
+  if (pCaf >= CONFIG.cafMin) return { kind: 'caf', top };
+  if (pNo >= opts.th) return { kind: 'nocaf', top };
+  return { kind: 'unk', top };
 }
 const TEXT = {
   caf:   { icon: '#i-caf',   title: '카페인이 들어 있을 수 있어요!', sub: (n) => `AI는 <b>${n}</b> 같다고 생각해요. 어린이는 조금만, 자주 먹지 않아요.`, bubble: '조심! 카페인 간식일 수 있어. 라벨을 같이 확인해 보자.' },

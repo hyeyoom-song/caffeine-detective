@@ -256,14 +256,14 @@ footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 4px; }
     <div class="ctl">
       <span class="l">카페인 판정 방식</span>
       <div class="seg" id="modeSeg">
-        <button type="button" data-mode="top" aria-pressed="true">가장 높은 클래스</button>
-        <button type="button" data-mode="sum" aria-pressed="false">카페인 확률 합산</button>
+        <button type="button" data-mode="top" aria-pressed="false">가장 높은 클래스</button>
+        <button type="button" data-mode="sum" aria-pressed="true">카페인 확률 합산</button>
       </div>
     </div>
     <div class="ctl">
       <label for="th">'잘 모르겠어요' 기준</label>
-      <input id="th" type="range" min="0.5" max="0.95" step="0.05" value="0.7">
-      <span class="num" id="thVal">0.70</span>
+      <input id="th" type="range" min="0.5" max="0.95" step="0.05" value="0.9">
+      <span class="num" id="thVal">0.90</span>
     </div>
   </div>
 
@@ -368,6 +368,7 @@ const CONFIG = {
   caffeine: ['초코', '커피', '홍차', '녹차', '콜라', '에너지드링크'],
   // 카페인이 없는 클래스
   noCaffeine: ['사이다', '흰우유', '과일'],
+  cafMin: 0.5,   // [내 말로: 이 값이 하는 일]
   // 겉모습이 닮았지만 카페인 유무가 다른 짝 → '닮은꼴 짝' 패널
   pairs: [['콜라', '사이다'], ['초코', '흰우유'], ['커피', '흰우유'], ['에너지드링크', '사이다']],
   // 파일 이름 속 조건 표시 → 화면에 보일 이름
@@ -399,7 +400,7 @@ const state = {
   labels: [],         // 모델 클래스 순서
   source: 'demo',     // 'demo' | 'run' | 'file'
   runId: '',
-  cond: 'all', mode: 'top', th: 0.7,
+  cond: 'all', mode: 'sum', th: 0.9,
   galFilter: 'risk', galClass: 'all', cell: null,
 };
 let model = null;
@@ -426,8 +427,10 @@ function judge(r, th = state.th, mode = state.mode) {
   let grp, rawGrp;
   if (mode === 'sum') {
     const pCaf = CONFIG.caffeine.reduce((s, c) => s + (r.probs[c] || 0), 0);
-    rawGrp = pCaf >= 0.5 ? 'caf' : 'nocaf';
-    grp = Math.max(pCaf, 1 - pCaf) < th ? 'unk' : rawGrp;
+    const pNo = CONFIG.noCaffeine.reduce((s, c) => s + (r.probs[c] || 0), 0);
+    rawGrp = pCaf >= CONFIG.cafMin ? 'caf' : 'nocaf';
+    // [내 말로: 이 부분이 하는 일]
+    grp = pCaf >= CONFIG.cafMin ? 'caf' : (pNo >= th ? 'nocaf' : 'unk');
   } else {
     rawGrp = grpOf(rawClass);
     grp = cls === UNK ? 'unk' : rawGrp;
